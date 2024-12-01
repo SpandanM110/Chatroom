@@ -29,6 +29,7 @@ const VideoChat = () => {
       call.on('stream', (stream) => {
         setRemoteStream(stream);
         remoteVideoRef.current.srcObject = stream;
+        console.log("remote connected");
       });
     });
 
@@ -44,6 +45,7 @@ const VideoChat = () => {
         const call = peerRef.current.call(partnerId, localStream);
         call.on('stream', (stream) => {
           setRemoteStream(stream);
+          console.log("local connected");
           remoteVideoRef.current.srcObject = stream;
         });
       });
