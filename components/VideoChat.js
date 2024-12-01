@@ -77,13 +77,13 @@ const VideoChat = () => {
     socketRef.current.emit('join');
   };
 
-  const nextChat = () => {
+  const endChat = () => {
     setRemoteStream(null);
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
-    socketRef.current.emit('join');
+    socketRef.current.emit('leave');
   };
 
   return (
@@ -98,15 +98,15 @@ const VideoChat = () => {
             onClick={startChat}
             className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
           >
-            Start Chat
+            Join Chat
           </button>
         )}
         {remoteStream && (
           <button
-            onClick={nextChat}
-            className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600"
+            onClick={endChat}
+            className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600"
           >
-            Next
+            End Chat
           </button>
         )}
       </div>
