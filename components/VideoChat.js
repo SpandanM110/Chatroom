@@ -33,12 +33,7 @@ const VideoChat = () => {
         console.log("remote connected");
       });
     });
-
-    return () => {
-      socketRef.current.disconnect();
-      peer.destroy();
-    };
-  }, []);
+  }, [remoteStream]);
 
   useEffect(() => {
     console.log("local connected");
