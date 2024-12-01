@@ -14,6 +14,7 @@ const io = socketIO(server, {
     origin: 'https://chatroom-nine-sandy.vercel.app',
     methods: ['GET', 'POST'],
   },
+  transports: ['websocket'],
 });
 
 let waitingQueue = [];
