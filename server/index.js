@@ -6,7 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: 'https://chatroom1-one.vercel.app/',
+    origin: 'https://chatroom1-one.vercel.app',
     methods: ['GET', 'POST'],
   },
 });
