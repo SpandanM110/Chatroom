@@ -12,7 +12,7 @@ const VideoChat = () => {
   const peerRef = useRef();
 
   useEffect(() => {
-    socketRef.current = io('wss://chatroom-zutt.onrender.com/socket.io/?EIO=4&transport=websocket', {
+    socketRef.current = io('wss://chatroom-zutt.onrender.comsocket.io', {
       transports: ['websocket'],
     });
 
