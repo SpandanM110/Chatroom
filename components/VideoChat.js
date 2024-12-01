@@ -1,68 +1,89 @@
 import { useEffect, useRef, useState } from 'react';
-import Peer from 'peerjs';
 import io from 'socket.io-client';
 
 const VideoChat = () => {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
-  const [peerId, setPeerId] = useState('');
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
   const socketRef = useRef();
-  const peerRef = useRef();
+  const peerConnectionRef = useRef();
 
   useEffect(() => {
-    socketRef.current = io('wss://chatroom-zutt.onrender.comsocket.io', {
+    socketRef.current = io('https://chatroom-zutt.onrender.com', {
       transports: ['websocket'],
     });
 
-    const peer = new Peer();
-    peerRef.current = peer;
+    socketRef.current.on('paired', async (partnerId) => {
+      console.log('Paired with:', partnerId);
+      const peerConnection = new RTCPeerConnection();
+      peerConnectionRef.current = peerConnection;
 
-    peer.on('open', (id) => {
-      setPeerId(id);
-      socketRef.current.emit('join', id);
+      localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream);
+      });
+
+      peerConnection.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
+      };
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+
+      socketRef.current.emit('offer', { to: partnerId, offer });
     });
 
-    peer.on('call', (call) => {
-      console.log("remote connected");
-      call.answer(localStream);
-      call.on('stream', (stream) => {
-        setRemoteStream(stream);
-        remoteVideoRef.current.srcObject = stream;
-        console.log("remote connected");
-      });
-    });
-  }, [remoteStream]);
+    socketRef.current.on('offer', async (data) => {
+      const peerConnection = new RTCPeerConnection();
+      peerConnectionRef.current = peerConnection;
 
-  useEffect(() => {
-    console.log("local connected");
-    if (localStream && socketRef.current) {
-      socketRef.current.on('paired', (partnerId) => {
-        const call = peerRef.current.call(partnerId, localStream);
-        call.on('stream', (stream) => {
-          setRemoteStream(stream);
-          console.log("local connected");
-          remoteVideoRef.current.srcObject = stream;
-        });
+      localStream.getTracks().forEach((track) => {
+        peerConnection.addTrack(track, localStream);
       });
-    }
+
+      peerConnection.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
+      };
+
+      await peerConnection.setRemoteDescription(data.offer);
+
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      socketRef.current.emit('answer', { to: data.from, answer });
+    });
+
+    socketRef.current.on('answer', async (data) => {
+      await peerConnectionRef.current.setRemoteDescription(data.answer);
+    });
+
+    socketRef.current.on('disconnect', () => {
+      setRemoteStream(null);
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
   }, [localStream]);
 
   const startChat = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     setLocalStream(stream);
     localVideoRef.current.srcObject = stream;
+    socketRef.current.emit('join');
   };
 
   const nextChat = () => {
     setRemoteStream(null);
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = new Peer();
-      setPeerId('');
-      socketRef.current.emit('join');
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
     }
+    socketRef.current.emit('join');
   };
 
   return (

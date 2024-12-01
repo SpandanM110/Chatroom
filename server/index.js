@@ -22,17 +22,25 @@ let waitingQueue = [];
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join', (peerId) => {
-    console.log('User joined with peer ID:', peerId);
+  socket.on('join', () => {
+    console.log('User joined:', socket.id);
     if (waitingQueue.length > 0) {
       console.log("Multiple users connected");
       const partner = waitingQueue.shift();
       socket.emit('paired', partner);
-      socket.to(partner).emit('paired', peerId);
+      socket.to(partner).emit('paired', socket.id);
     } else {
-      console.log("adding user to queue");
-      waitingQueue.push(peerId);
+      console.log("Adding user to queue");
+      waitingQueue.push(socket.id);
     }
+  });
+
+  socket.on('offer', (data) => {
+    socket.to(data.to).emit('offer', { from: socket.id, offer: data.offer });
+  });
+
+  socket.on('answer', (data) => {
+    socket.to(data.to).emit('answer', data.answer);
   });
 
   socket.on('disconnect', () => {
