@@ -3,10 +3,15 @@ const http = require('http');
 const socketIO = require('socket.io');
 
 const app = express();
+app.use(cors({
+  origin: 'https://chatroom-nine-sandy.vercel.app',
+  methods: ['GET', 'POST'],
+}));
+
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: 'https://chatroom1-one.vercel.app',
+    origin: 'https://chatroom-nine-sandy.vercel.app',
     methods: ['GET', 'POST'],
   },
 });
