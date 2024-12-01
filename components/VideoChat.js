@@ -27,7 +27,7 @@ const VideoChat = () => {
       const io = (await import('socket.io-client')).default;
       const { default: Peer } = await import('peerjs');
 
-      socketRef.current = io('https://chatroom-zutt.onrender.com');
+      socketRef.current = io('https://chatroom-4671.vercel.app');
       
       socketRef.current.on('connect', () => {
         setSocketConnected(true);
