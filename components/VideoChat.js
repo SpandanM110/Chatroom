@@ -43,6 +43,7 @@ const VideoChat = () => {
 
       peerConnection.ontrack = (event) => {
         setRemoteStream(event.streams[0]);
+        remoteVideoRef.current.srcObject = event.streams[0];
       };
 
       await peerConnection.setRemoteDescription(data.offer);
