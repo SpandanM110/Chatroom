@@ -25,6 +25,7 @@ const VideoChat = () => {
     });
 
     peer.on('call', (call) => {
+      console.log("remote connected");
       call.answer(localStream);
       call.on('stream', (stream) => {
         setRemoteStream(stream);
@@ -40,6 +41,7 @@ const VideoChat = () => {
   }, []);
 
   useEffect(() => {
+    console.log("local connected");
     if (localStream && socketRef.current) {
       socketRef.current.on('paired', (partnerId) => {
         const call = peerRef.current.call(partnerId, localStream);
