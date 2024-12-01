@@ -14,11 +14,11 @@ pnpm dev
 bun dev
 ```
 
-Open [https://chatroom1-one.vercel.app/](https://chatroom1-one.vercel.app/) with your browser to see the result.
+Open [https://chatroom-zutt.onrender.com/](https://chatroom-zutt.onrender.com/) with your browser to see the result.
 
 You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [https://chatroom1-one.vercel.app//api/hello](https://chatroom1-one.vercel.app//api/hello). This endpoint can be edited in `pages/api/hello.js`.
+[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [https://chatroom-zutt.onrender.com//api/hello](https://chatroom-zutt.onrender.com//api/hello). This endpoint can be edited in `pages/api/hello.js`.
 
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
 
