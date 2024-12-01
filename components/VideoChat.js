@@ -12,7 +12,9 @@ const VideoChat = () => {
   const peerRef = useRef();
 
   useEffect(() => {
-    socketRef.current = io('https://chatroom1-one.vercel.app');
+    socketRef.current = io('https://chatroom1-one.vercel.app', {
+      transports: ['websocket'],
+    });
 
     const peer = new Peer();
     peerRef.current = peer;

@@ -1,12 +1,12 @@
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
+const cors = require('cors');
 
 const app = express();
-app.use(cors({
-  origin: 'https://chatroom-nine-sandy.vercel.app',
-  methods: ['GET', 'POST'],
-}));
+
+// Enable CORS for all routes
+app.use(cors());
 
 const server = http.createServer(app);
 const io = socketIO(server, {
