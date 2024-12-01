@@ -25,10 +25,12 @@ io.on('connection', (socket) => {
   socket.on('join', (peerId) => {
     console.log('User joined with peer ID:', peerId);
     if (waitingQueue.length > 0) {
+      console.log("Multiple users connected");
       const partner = waitingQueue.shift();
       socket.emit('paired', partner);
       socket.to(partner).emit('paired', peerId);
     } else {
+      console.log("adding user to queue");
       waitingQueue.push(peerId);
     }
   });
