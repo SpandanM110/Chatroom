@@ -99,7 +99,7 @@ function leaveCurrentChat(socketId) {
 }
 
 function tryMatchPeers() {
-  if (waitingQueue.size >= 2) {
+  while (waitingQueue.size >= 2) {
     const peers = Array.from(waitingQueue);
     const randomIndex = Math.floor(Math.random()*peers.length);
     const peer1 = peers[randomIndex];
@@ -107,7 +107,7 @@ function tryMatchPeers() {
     // Find a different peer for matching
     let peer2;
     do {
-      const randomPeer2Index = (peers.length-Math.floor(Math.random()*peers.length))%peers.length;
+      const randomPeer2Index = Math.floor(Math.random()*peers.length);
       peer2 = peers[randomPeer2Index];
     } while (peer2.socketId === peer1.socketId);
     
