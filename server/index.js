@@ -38,6 +38,8 @@ io.on('connection', (socket) => {
       const currentPeerId = userPeerIds.get(socket.id);
       waitingQueue.add({ socketId: socket.id, peerId: currentPeerId });
       waitingQueue.add({ socketId: chatPartner.socketId, peerId: chatPartner.peerId });
+
+
       
       io.to(socket.id).emit('chatEnded');
       io.to(chatPartner.socketId).emit('chatEnded');
@@ -99,13 +101,13 @@ function leaveCurrentChat(socketId) {
 function tryMatchPeers() {
   if (waitingQueue.size >= 2) {
     const peers = Array.from(waitingQueue);
-    const randomIndex = Math.floor(Math.random() * peers.length);
+    const randomIndex = Math.floor(Math.random(0,peers.length));
     const peer1 = peers[randomIndex];
     
     // Find a different peer for matching
     let peer2;
     do {
-      const randomPeer2Index = Math.floor(Math.random() * peers.length);
+      const randomPeer2Index = Math.floor(Math.random(0,peers.length));
       peer2 = peers[randomPeer2Index];
     } while (peer2.socketId === peer1.socketId);
     
