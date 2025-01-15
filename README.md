@@ -14,7 +14,6 @@ pnpm dev
 bun dev
 ```
 
-Open [https://chatroom-zutt.onrender.com/](https://chatroom-zutt.onrender.com/) with your browser to see the result.
 
 You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
 
