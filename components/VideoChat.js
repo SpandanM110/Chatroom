@@ -192,53 +192,163 @@ const VideoChat = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="relative w-full max-w-4xl bg-white p-4 rounded-lg shadow-lg">
-        <div className="relative aspect-video">
+    <div
+      className="
+        min-h-screen 
+        flex 
+        items-center 
+        justify-center 
+        bg-gradient-to-br 
+        from-black 
+        to-gray-900 
+        p-4
+      "
+    >
+      {/* Main Card Container */}
+      <div
+        className="
+          w-full 
+          max-w-4xl 
+          bg-black/80 
+          rounded-lg 
+          shadow-2xl 
+          p-6 
+          sm:p-8 
+          md:p-10
+        "
+      >
+        {/* Remote Video / Placeholder */}
+        <div className="relative aspect-video w-full">
           {remoteStream ? (
-            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full rounded-lg" />
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full rounded-lg object-cover"
+            />
           ) : (
-            <div className="w-full h-full bg-gray-800 rounded-lg flex items-center justify-center">
-              <p className="text-white text-xl">
-                {isSearching ? "Searching for partner..." : "Start a chat to connect"}
+            <div
+              className="
+                w-full 
+                h-full 
+                bg-gray-800 
+                rounded-lg 
+                flex 
+                items-center 
+                justify-center
+              "
+            >
+              <p className="text-white text-base sm:text-lg md:text-xl">
+                {isSearching
+                  ? "Searching for partner..."
+                  : "Start a chat to connect"}
               </p>
             </div>
           )}
+  
           {localStream && (
-            <div className="absolute top-4 right-4 w-1/4 aspect-video">
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full rounded-lg shadow-md" />
+            <div
+              className="
+                absolute 
+                top-3 
+                right-3 
+                w-1/4 
+                md:w-1/5 
+                aspect-video 
+                rounded-lg 
+                overflow-hidden 
+                shadow-md
+              "
+            >
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
             </div>
           )}
         </div>
-        
-        <div className="mt-4 flex justify-center gap-4">
+  
+        {/* Button Controls */}
+        <div
+          className="
+            mt-6 
+            flex 
+            flex-wrap 
+            justify-center 
+            gap-4
+          "
+        >
+          {/* Not started or in queue */}
           {!localStream && !isInQueue && (
             <button
               onClick={joinQueue}
-              className="px-6 py-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+              className="
+                px-6 
+                py-3 
+                bg-blue-500 
+                rounded-lg 
+                text-white 
+                hover:bg-blue-600 
+                transition-colors 
+                font-semibold
+              "
             >
               Start Random Chat
             </button>
           )}
+  
+          {/* In queue but not yet in a chat */}
           {isInQueue && !isChatActive && (
             <button
               onClick={leaveQueue}
-              className="px-6 py-3 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition-colors"
+              className="
+                px-6 
+                py-3 
+                bg-yellow-500 
+                rounded-lg 
+                text-white 
+                hover:bg-yellow-600 
+                transition-colors 
+                font-semibold
+              "
             >
               Leave Queue
             </button>
           )}
+  
+          {/* Chat is active: show Next & End buttons */}
           {isChatActive && (
             <>
               <button
                 onClick={nextChat}
-                className="px-6 py-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+                className="
+                  px-6 
+                  py-3 
+                  bg-blue-500 
+                  rounded-lg 
+                  text-white 
+                  hover:bg-blue-600 
+                  transition-colors 
+                  font-semibold
+                "
               >
                 Next Chat
               </button>
               <button
                 onClick={endChat}
-                className="px-6 py-3 text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                className="
+                  px-6 
+                  py-3 
+                  bg-red-500 
+                  rounded-lg 
+                  text-white 
+                  hover:bg-red-600 
+                  transition-colors 
+                  font-semibold
+                "
               >
                 End Chat
               </button>
@@ -248,6 +358,7 @@ const VideoChat = () => {
       </div>
     </div>
   );
+  
 };
 
 export default dynamic(() => Promise.resolve(VideoChat), {

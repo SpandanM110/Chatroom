@@ -28,7 +28,7 @@ io.on('connection', (socket) => {
     userPeerIds.set(socket.id, peerId);
     leaveCurrentChat(socket.id);
     
-    // Add user to waiting queue with timestamp for FIFO or reference if needed
+    // Add user to waiting queue with timestamp for FIFO consideration
     waitingQueue.push({
       socketId: socket.id,
       peerId,
@@ -38,6 +38,7 @@ io.on('connection', (socket) => {
     tryMatchPeers();
   });
 
+  // Rest of the socket event handlers remain the same
   socket.on('endChat', () => {
     console.log('Chat ended by:', socket.id);
     const chatPartner = leaveCurrentChat(socket.id);
@@ -98,29 +99,23 @@ io.on('connection', (socket) => {
       });
       tryMatchPeers();
     }
-    // Remove the disconnected user from the waiting queue
+    // Remove disconnected user from waiting queue
     waitingQueue = waitingQueue.filter(peer => peer.socketId !== socket.id);
     userPeerIds.delete(socket.id);
   });
 });
 
-/**
- * Removes the user from any active chat.
- * Returns the partner if found, otherwise null.
- */
 function leaveCurrentChat(socketId) {
-  for (const [chatId, chatPair] of activeChats.entries()) {
-    if (chatPair.peer1.socketId === socketId || chatPair.peer2.socketId === socketId) {
-      activeChats.delete(chatId);
+  for (const [key, value] of activeChats.entries()) {
+    if (value.peer1.socketId === socketId || value.peer2.socketId === socketId) {
+      const chatPair = activeChats.get(key);
+      activeChats.delete(key);
       return chatPair.peer1.socketId === socketId ? chatPair.peer2 : chatPair.peer1;
     }
   }
   return null;
 }
 
-/**
- * Shuffles an array in place for random pairing.
- */
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -129,30 +124,25 @@ function shuffleArray(array) {
   return array;
 }
 
-/**
- * Attempts to match peers into pairs from the waitingQueue.
- * - Shuffles the queue for random pairing
- * - Forms pairs
- * - Removes them from the waitingQueue
- * - Moves them into activeChats
- */
 function tryMatchPeers() {
   if (waitingQueue.length < 2) return;
 
-  // Create a copy and shuffle it for random pairing
+  // Create a copy of the waiting queue and shuffle it
   let availablePeers = [...waitingQueue];
   shuffleArray(availablePeers);
 
+  // Track which peers have been matched
   const matchedPeers = new Set();
   const matches = [];
 
-  // Pair up peers in random order
+  // Match peers randomly while considering waiting time
   for (let i = 0; i < availablePeers.length; i++) {
     if (matchedPeers.has(availablePeers[i].socketId)) continue;
 
     for (let j = i + 1; j < availablePeers.length; j++) {
       if (matchedPeers.has(availablePeers[j].socketId)) continue;
 
+      // Match these peers
       matches.push([availablePeers[i], availablePeers[j]]);
       matchedPeers.add(availablePeers[i].socketId);
       matchedPeers.add(availablePeers[j].socketId);
@@ -160,8 +150,9 @@ function tryMatchPeers() {
     }
   }
 
-  // Process matches found
+  // Process all matches
   for (const [peer1, peer2] of matches) {
+    // Remove matched peers from waiting queue
     waitingQueue = waitingQueue.filter(
       peer => peer.socketId !== peer1.socketId && peer.socketId !== peer2.socketId
     );
@@ -170,8 +161,6 @@ function tryMatchPeers() {
     activeChats.set(chatId, { peer1, peer2 });
 
     console.log('Matching peers:', peer1.peerId, peer2.peerId);
-
-    // Notify both peers they are matched
     io.to(peer1.socketId).emit('peerMatch', peer2.peerId);
     io.to(peer2.socketId).emit('peerMatch', peer1.peerId);
   }
