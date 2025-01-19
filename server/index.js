@@ -3,19 +3,18 @@ const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server, {
   cors: {
-    origin: "https://chatroom-gold.vercel.app",
+    origin: ["https://chatroom-gold.vercel.app"],
     methods: ["GET", "POST"],
   }
 });
 
 const cors = require('cors');
 app.use(cors({
-  origin: '*',
+  origin: ['https://chatroom-gold.vercel.app'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
 
-// Using arrays instead of Set for better random access
 let waitingQueue = [];
 const activeChats = new Map();
 const userPeerIds = new Map();
@@ -24,90 +23,31 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   socket.on('joinQueue', (peerId) => {
+    if (!peerId) {
+      console.error('Missing peerId for socket:', socket.id);
+      return;
+    }
     console.log('User joined queue:', peerId);
     userPeerIds.set(socket.id, peerId);
     leaveCurrentChat(socket.id);
     
-    // Add user to waiting queue with timestamp for FIFO or reference if needed
-    waitingQueue.push({
-      socketId: socket.id,
-      peerId,
-      joinTime: Date.now()
-    });
-    
+    addToWaitingQueue({ socketId: socket.id, peerId, joinTime: Date.now() });
     tryMatchPeers();
   });
 
   socket.on('endChat', () => {
-    console.log('Chat ended by:', socket.id);
-    const chatPartner = leaveCurrentChat(socket.id);
-    
-    if (chatPartner) {
-      const currentPeerId = userPeerIds.get(socket.id);
-      waitingQueue.push({
-        socketId: socket.id,
-        peerId: currentPeerId,
-        joinTime: Date.now()
-      });
-      waitingQueue.push({
-        socketId: chatPartner.socketId,
-        peerId: chatPartner.peerId,
-        joinTime: Date.now()
-      });
-      
-      io.to(socket.id).emit('chatEnded');
-      io.to(chatPartner.socketId).emit('chatEnded');
-      
-      tryMatchPeers();
-    }
+    handleEndChat(socket.id);
   });
 
   socket.on('next', () => {
-    console.log('Next requested by:', socket.id);
-    const chatPartner = leaveCurrentChat(socket.id);
-    
-    if (chatPartner) {
-      const currentPeerId = userPeerIds.get(socket.id);
-      waitingQueue.push({
-        socketId: socket.id,
-        peerId: currentPeerId,
-        joinTime: Date.now()
-      });
-      waitingQueue.push({
-        socketId: chatPartner.socketId,
-        peerId: chatPartner.peerId,
-        joinTime: Date.now()
-      });
-      
-      io.to(socket.id).emit('searching');
-      io.to(chatPartner.socketId).emit('partnerLeft');
-      
-      tryMatchPeers();
-    }
+    handleNext(socket.id);
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    const chatPartner = leaveCurrentChat(socket.id);
-    if (chatPartner) {
-      io.to(chatPartner.socketId).emit('partnerLeft');
-      waitingQueue.push({
-        socketId: chatPartner.socketId,
-        peerId: chatPartner.peerId,
-        joinTime: Date.now()
-      });
-      tryMatchPeers();
-    }
-    // Remove the disconnected user from the waiting queue
-    waitingQueue = waitingQueue.filter(peer => peer.socketId !== socket.id);
-    userPeerIds.delete(socket.id);
+    handleDisconnect(socket.id);
   });
 });
 
-/**
- * Removes the user from any active chat.
- * Returns the partner if found, otherwise null.
- */
 function leaveCurrentChat(socketId) {
   for (const [chatId, chatPair] of activeChats.entries()) {
     if (chatPair.peer1.socketId === socketId || chatPair.peer2.socketId === socketId) {
@@ -118,9 +58,14 @@ function leaveCurrentChat(socketId) {
   return null;
 }
 
-/**
- * Shuffles an array in place for random pairing.
- */
+function addToWaitingQueue(peer) {
+  waitingQueue.push(peer);
+}
+
+function removeFromWaitingQueue(socketId) {
+  waitingQueue = waitingQueue.filter(peer => peer.socketId !== socketId);
+}
+
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -129,24 +74,15 @@ function shuffleArray(array) {
   return array;
 }
 
-/**
- * Attempts to match peers into pairs from the waitingQueue.
- * - Shuffles the queue for random pairing
- * - Forms pairs
- * - Removes them from the waitingQueue
- * - Moves them into activeChats
- */
 function tryMatchPeers() {
   if (waitingQueue.length < 2) return;
 
-  // Create a copy and shuffle it for random pairing
   let availablePeers = [...waitingQueue];
   shuffleArray(availablePeers);
 
   const matchedPeers = new Set();
   const matches = [];
 
-  // Pair up peers in random order
   for (let i = 0; i < availablePeers.length; i++) {
     if (matchedPeers.has(availablePeers[i].socketId)) continue;
 
@@ -160,21 +96,63 @@ function tryMatchPeers() {
     }
   }
 
-  // Process matches found
   for (const [peer1, peer2] of matches) {
-    waitingQueue = waitingQueue.filter(
-      peer => peer.socketId !== peer1.socketId && peer.socketId !== peer2.socketId
-    );
+    removeFromWaitingQueue(peer1.socketId);
+    removeFromWaitingQueue(peer2.socketId);
 
     const chatId = `${peer1.socketId}-${peer2.socketId}`;
     activeChats.set(chatId, { peer1, peer2 });
 
     console.log('Matching peers:', peer1.peerId, peer2.peerId);
 
-    // Notify both peers they are matched
     io.to(peer1.socketId).emit('peerMatch', peer2.peerId);
     io.to(peer2.socketId).emit('peerMatch', peer1.peerId);
   }
+}
+
+function handleEndChat(socketId) {
+  console.log('Chat ended by:', socketId);
+  const chatPartner = leaveCurrentChat(socketId);
+
+  if (chatPartner) {
+    requeueUsers(socketId, chatPartner.socketId);
+    io.to(socketId).emit('chatEnded');
+    io.to(chatPartner.socketId).emit('chatEnded');
+    tryMatchPeers();
+  }
+}
+
+function handleNext(socketId) {
+  console.log('Next requested by:', socketId);
+  const chatPartner = leaveCurrentChat(socketId);
+
+  if (chatPartner) {
+    requeueUsers(socketId, chatPartner.socketId);
+    io.to(socketId).emit('searching');
+    io.to(chatPartner.socketId).emit('partnerLeft');
+    tryMatchPeers();
+  }
+}
+
+function handleDisconnect(socketId) {
+  console.log('User disconnected:', socketId);
+  const chatPartner = leaveCurrentChat(socketId);
+
+  if (chatPartner) {
+    io.to(chatPartner.socketId).emit('partnerLeft');
+    addToWaitingQueue({ socketId: chatPartner.socketId, peerId: userPeerIds.get(chatPartner.socketId), joinTime: Date.now() });
+    tryMatchPeers();
+  }
+  removeFromWaitingQueue(socketId);
+  userPeerIds.delete(socketId);
+}
+
+function requeueUsers(socketId1, socketId2) {
+  const peerId1 = userPeerIds.get(socketId1);
+  const peerId2 = userPeerIds.get(socketId2);
+
+  addToWaitingQueue({ socketId: socketId1, peerId: peerId1, joinTime: Date.now() });
+  addToWaitingQueue({ socketId: socketId2, peerId: peerId2, joinTime: Date.now() });
 }
 
 const PORT = process.env.PORT || 3001;
