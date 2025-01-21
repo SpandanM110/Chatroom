@@ -28,7 +28,7 @@ const VideoChat = () => {
       const { default: Peer } = await import('peerjs');
 
       socketRef.current = io('https://chatroom-production-f787.up.railway.app');
-      
+
       socketRef.current.on('connect', () => {
         setSocketConnected(true);
       });
@@ -133,7 +133,7 @@ const VideoChat = () => {
         return;
       }
     }
-    
+
     setIsInQueue(true);
     setIsSearching(true);
     if (socketRef.current) {
@@ -151,8 +151,7 @@ const VideoChat = () => {
     if (socketRef.current) {
       socketRef.current.emit('endChat');
     }
-    setIsSearching(true);
-    cleanupCurrentChat();
+    leaveQueue(); // Reuse leaveQueue to reset everything and exit the queue
   };
 
   const nextChat = () => {
@@ -160,7 +159,6 @@ const VideoChat = () => {
       socketRef.current.emit('next');
     }
     cleanupCurrentChat();
-    //setIsSearching(true);
   };
 
   const callPeer = (targetPeerId) => {
@@ -358,7 +356,6 @@ const VideoChat = () => {
       </div>
     </div>
   );
-  
 };
 
 export default dynamic(() => Promise.resolve(VideoChat), {
